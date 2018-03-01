@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include <chainparams.h>
 #include <init.h>
 #include <interfaces/chain.h>
 #include <net.h>
@@ -159,6 +160,19 @@ bool WalletInit::ParameterInteraction() const
             InitWarning(strprintf(_("Warning: incorrect parameter %s, path must exist! Using default path."), "-walletbackupsdir"));
             gArgs.ForceRemoveArg("-walletbackupsdir");
         }
+    }
+
+    g_wallet_allow_fallback_fee = Params().IsFallbackFeeEnabled();
+    if (gArgs.IsArgSet("-fallbackfee"))
+    {
+        CAmount nFeePerK = 0;
+        if (!ParseMoney(gArgs.GetArg("-fallbackfee", ""), nFeePerK))
+            return InitError(strprintf(_("Invalid amount for -fallbackfee=<amount>: '%s'"), gArgs.GetArg("-fallbackfee", "")));
+        if (nFeePerK > HIGH_TX_FEE_PER_KB)
+            InitWarning(AmountHighWarn("-fallbackfee") + " " +
+                        _("This is the transaction fee you may pay when fee estimates are not available."));
+        CWallet::fallbackFee = CFeeRate(nFeePerK);
+        g_wallet_allow_fallback_fee = nFeePerK != 0; //disable fallback fee in case value was set to 0, enable if non-null value
     }
 
     if (gArgs.IsArgSet("-hdseed") && IsHex(gArgs.GetArg("-hdseed", "not hex")) && (gArgs.IsArgSet("-mnemonic") || gArgs.IsArgSet("-mnemonicpassphrase"))) {
