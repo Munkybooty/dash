@@ -17,7 +17,7 @@ fi
 # Any value below 100 introduces the risk of false positives, which would create an unacceptable maintenance burden.
 if ! vulture \
     --min-confidence 100 \
-    $(git ls-files -- "*.py"); then
+    $(git ls-files -- "*.py" ":(exclude)test/functional/data/invalid_txs.py"); then
     echo "Python dead code detection found some issues"
     exit 1
 fi
