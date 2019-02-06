@@ -43,9 +43,9 @@ BOOST_FIXTURE_TEST_CASE(scan_for_wallet_transactions, TestChain100Setup)
     CreateAndProcessBlock({}, GetScriptForRawPubKey(coinbaseKey.GetPubKey()));
     CBlockIndex* newTip = ::ChainActive().Tip();
 
+    LockAnnotation lock(::cs_main);
     auto chain = interfaces::MakeChain();
     auto locked_chain = chain->lock();
-    LockAnnotation lock(::cs_main);
 
     // Verify ScanForWalletTransactions accommodates a null start block.
     {
@@ -122,9 +122,9 @@ BOOST_FIXTURE_TEST_CASE(importmulti_rescan, TestChain100Setup)
     CreateAndProcessBlock({}, GetScriptForRawPubKey(coinbaseKey.GetPubKey()));
     CBlockIndex* newTip = ::ChainActive().Tip();
 
+    LockAnnotation lock(::cs_main);
     auto chain = interfaces::MakeChain();
     auto locked_chain = chain->lock();
-    LockAnnotation lock(::cs_main);
 
     // Prune the older block file.
     PruneOneBlockFile(oldTip->GetBlockPos().nFile);
