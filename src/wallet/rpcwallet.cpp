@@ -169,11 +169,6 @@ UniValue getnewaddress(const JSONRPCRequest& request)
                 },
             }.ToString());
 
-    // Belt and suspenders check for disabled private keys
-    if (pwallet->IsWalletFlagSet(WALLET_FLAG_DISABLE_PRIVATE_KEYS)) {
-        throw JSONRPCError(RPC_WALLET_ERROR, "Error: Private keys are disabled for this wallet");
-    }
-
     LOCK(pwallet->cs_wallet);
 
     if (!pwallet->CanGetAddresses()) {
@@ -224,11 +219,6 @@ static UniValue getrawchangeaddress(const JSONRPCRequest& request)
             + HelpExampleRpc("getrawchangeaddress", "")
                 },
             }.ToString());
-
-    // Belt and suspenders check for disabled private keys
-    if (pwallet->IsWalletFlagSet(WALLET_FLAG_DISABLE_PRIVATE_KEYS)) {
-        throw JSONRPCError(RPC_WALLET_ERROR, "Error: Private keys are disabled for this wallet");
-    }
 
     LOCK(pwallet->cs_wallet);
 

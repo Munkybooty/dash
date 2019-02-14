@@ -3603,8 +3603,8 @@ bool CWallet::CreateTransaction(interfaces::Chain::Lock& locked_chain, const std
                 //  post-backup change.
 
                 // Reserve a new key pair from key pool
-                if (IsWalletFlagSet(WALLET_FLAG_DISABLE_PRIVATE_KEYS)) {
-                    strFailReason = _("Can't generate a change-address key. Private keys are disabled for this wallet.");
+                if (!CanGetAddresses(true)) {
+                    strFailReason = _("Can't generate a change-address key. No keys in the internal keypool and can't generate any keys.");
                     return false;
                 }
                 CPubKey vchPubKey;
@@ -4281,6 +4281,29 @@ bool CWallet::TopUpKeyPool(unsigned int kpSize)
     return true;
 }
 
+void CWallet::AddKeypoolPubkey(const CPubKey& pubkey, const bool internal)
+{
+    WalletBatch batch(*database);
+    AddKeypoolPubkeyWithDB(pubkey, internal, batch);
+    NotifyCanGetAddressesChanged();
+}
+
+void CWallet::AddKeypoolPubkeyWithDB(const CPubKey& pubkey, const bool internal, WalletBatch& batch)
+{
+    LOCK(cs_wallet);
+    assert(m_max_keypool_index < std::numeric_limits<int64_t>::max()); // How in the hell did you use so many keys?
+    int64_t index = ++m_max_keypool_index;
+    if (!batch.WritePool(index, CKeyPool(pubkey, internal))) {
+        throw std::runtime_error(std::string(__func__) + ": writing imported pubkey failed");
+    }
+    if (internal) {
+        setInternalKeyPool.insert(index);
+    } else {
+        setExternalKeyPool.insert(index);
+    }
+    m_pool_key_to_index[pubkey.GetID()] = index;
+}
+
 bool CWallet::ReserveKeyFromKeyPool(int64_t& nIndex, CKeyPool& keypool, bool fRequestedInternal)
 {
     nIndex = -1;
@@ -4290,7 +4313,8 @@ bool CWallet::ReserveKeyFromKeyPool(int64_t& nIndex, CKeyPool& keypool, bool fRe
 
         TopUpKeyPool();
 
-        bool fReturningInternal = IsHDEnabled() && fRequestedInternal;
+        bool fReturningInternal = fRequestedInternal;
+        fReturningInternal &= (IsHDEnabled() && CanSupportFeature(FEATURE_HD_SPLIT)) || IsWalletFlagSet(WALLET_FLAG_DISABLE_PRIVATE_KEYS);
         std::set<int64_t>& setKeyPool = fReturningInternal ? setInternalKeyPool : setExternalKeyPool;
 
         // Get the oldest key
@@ -4305,7 +4329,8 @@ bool CWallet::ReserveKeyFromKeyPool(int64_t& nIndex, CKeyPool& keypool, bool fRe
         if (!batch.ReadPool(nIndex, keypool)) {
             throw std::runtime_error(std::string(__func__) + ": read failed");
         }
-        if (!HaveKey(keypool.vchPubKey.GetID())) {
+        CPubKey pk;
+        if (!GetPubKey(keypool.vchPubKey.GetID(), pk)) {
             throw std::runtime_error(std::string(__func__) + ": unknown key in key pool");
         }
         if (keypool.fInternal != fReturningInternal) {
@@ -4362,10 +4387,9 @@ bool CWallet::GetKeyFromPool(CPubKey& result, bool internal)
     {
         LOCK(cs_wallet);
         int64_t nIndex;
-        if (!ReserveKeyFromKeyPool(nIndex, keypool, internal)) {
+        if (!ReserveKeyFromKeyPool(nIndex, keypool, internal) && !IsWalletFlagSet(WALLET_FLAG_DISABLE_PRIVATE_KEYS)) {
             if (IsLocked(true)) return false;
             // TODO: implement keypool for all accouts?
-
             WalletBatch batch(*database);
             result = GenerateNewKey(batch, 0, internal);
             return true;
