@@ -5,13 +5,16 @@
 """Test transaction signing using the signrawtransaction* RPCs."""
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, assert_raises_rpc_error
+from test_framework.util import assert_equal, assert_raises_rpc_error, bytes_to_hex_str, hex_str_to_bytes
+from test_framework.messages import sha256
+from test_framework.script import CScript, OP_0
 
+from decimal import Decimal
 
 class SignRawTransactionsTest(BitcoinTestFramework):
     def set_test_params(self):
         self.setup_clean_chain = True
-        self.num_nodes = 1
+        self.num_nodes = 2
 
     def skip_test_if_missing_module(self):
         self.skip_if_no_wallet()
