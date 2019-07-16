@@ -27,6 +27,9 @@ class InvalidTxRequestTest(BitcoinTestFramework):
 
     def set_test_params(self):
         self.num_nodes = 1
+        self.extra_args = [[
+            "-acceptnonstdtxn=1",
+        ]]
         self.setup_clean_chain = True
 
     def bootstrap_p2p(self, *, num_connections=1):
