@@ -140,7 +140,7 @@ DISTNAME="$(basename "$SOURCEDIST" '.tar.gz')"
 CONFIGFLAGS="--enable-glibc-back-compat --enable-reduce-exports --disable-bench --disable-gui-tests"
 HOST_CFLAGS="-O2 -g -ffile-prefix-map=${PWD}=."
 HOST_CXXFLAGS="-O2 -g -ffile-prefix-map=${PWD}=."
-HOST_LDFLAGS="-Wl,--as-needed -Wl,--dynamic-linker=$glibc_dynamic_linker -static-libstdc++"
+HOST_LDFLAGS="-Wl,--as-needed -Wl,--dynamic-linker=$glibc_dynamic_linker -static-libstdc++ -Wl,-O2"
 
 # Make $HOST-specific native binaries from depends available in $PATH
 export PATH="${BASEPREFIX}/${HOST}/native/bin:${PATH}"
