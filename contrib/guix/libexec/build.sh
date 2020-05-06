@@ -195,7 +195,9 @@ export PATH="${BASEPREFIX}/${HOST}/native/bin:${PATH}"
     cd "$DISTSRC"
 
     # Extract the source tarball
-    tar --strip-components=1 -xf "${SOURCEDIST}"
+    tar -xf "${GIT_ARCHIVE}"
+
+    ./autogen.sh
 
     # Configure this DISTSRC for $HOST
     # shellcheck disable=SC2086
@@ -228,7 +230,7 @@ export PATH="${BASEPREFIX}/${HOST}/native/bin:${PATH}"
     # Make the os-specific installers
     case "$HOST" in
         *mingw*)
-            make deploy ${V:+V=1}
+            make deploy ${V:+V=1} BITCOIN_WIN_INSTALLER="${OUTDIR}/${DISTNAME}-win64-setup-unsigned.exe"
             ;;
     esac
 
@@ -240,11 +242,6 @@ export PATH="${BASEPREFIX}/${HOST}/native/bin:${PATH}"
     # Install built Dash Core to $INSTALLPATH
     make install DESTDIR="${INSTALLPATH}" ${V:+V=1}
 
-    case "$HOST" in
-        *mingw*)
-            cp -f --target-directory="$OUTDIR" ./*-setup-unsigned.exe
-            ;;
-    esac
     (
         cd installed
 
@@ -272,7 +269,7 @@ export PATH="${BASEPREFIX}/${HOST}/native/bin:${PATH}"
                 cp "${DISTSRC}/doc/README_windows.txt" "${DISTNAME}/readme.txt"
                 ;;
             *linux*)
-                cp "${DISTSRC}/doc/README.md" "${DISTNAME}/"
+                cp "${DISTSRC}/README.md" "${DISTNAME}/"
                 ;;
         esac
 
@@ -315,7 +312,7 @@ case "$HOST" in
         (
             cd ./windeploy
             mkdir unsigned
-            cp --target-directory=unsigned/ "$OUTDIR"/bitcoin-*-setup-unsigned.exe
+            cp --target-directory=unsigned/ "${OUTDIR}/${DISTNAME}-win64-setup-unsigned.exe"
             find . -print0 \
                 | sort --zero-terminated \
                 | tar --create --no-recursion --mode='u+rw,go+r-w,a+X' --null --files-from=- \
