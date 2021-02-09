@@ -206,7 +206,7 @@ DISTNAME="$(basename "$SOURCEDIST" '.tar.gz')"
 ###########################
 
 # CONFIGFLAGS
-CONFIGFLAGS="--enable-reduce-exports --disable-bench --disable-gui-tests"
+CONFIGFLAGS="--enable-reduce-exports --disable-bench --disable-gui-tests --disable-fuzz-binary"
 case "$HOST" in
     *linux*) CONFIGFLAGS+=" --enable-glibc-back-compat" ;;
 esac
